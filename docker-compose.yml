@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "8001:8000"
+
+  orders-service:
+    build: ./services/orders-service
+    ports:
+      - "8002:8000"
+
+  payments-service:
+    build: ./services/payments-service
+    ports:
+      - "8003:8000"
+
+  inventory-service:
+    build: ./services/inventory-service
+    ports:
+      - "8004:8000"
+
+  traffic-generator:
+    build: ./traffic-generator
+    depends_on:
+      - auth-service
+      - orders-service
+      - payments-service
+      - inventory-service
+    volumes:
+      - ./ground-truth:/var/log
