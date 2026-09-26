@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 ground-truth/*.log
 .env
+.pem

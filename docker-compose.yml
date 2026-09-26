@@ -1,22 +1,37 @@
-version: "3.8"
 services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: loguser
+      POSTGRES_PASSWORD: logpass
+      POSTGRES_DB: logs_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
   auth-service:
     build: ./services/auth-service
+    container_name: auth-service
     ports:
       - "8001:8000"
 
   orders-service:
     build: ./services/orders-service
+    container_name: orders-service
     ports:
       - "8002:8000"
 
   payments-service:
     build: ./services/payments-service
+    container_name: payments-service
     ports:
       - "8003:8000"
 
   inventory-service:
     build: ./services/inventory-service
+    container_name: inventory-service
     ports:
       - "8004:8000"
 
@@ -29,3 +44,22 @@ services:
       - inventory-service
     volumes:
       - ./ground-truth:/var/log
+
+  log-shipper:
+    build: ./log-shipper
+    depends_on:
+      - postgres
+      - auth-service
+      - orders-service
+      - payments-service
+      - inventory-service
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  spark-scorer:
+    build: ./spark-scorer
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
