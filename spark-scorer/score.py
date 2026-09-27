@@ -1,5 +1,6 @@
 """
 Day 5-6: MapReduce-based anomaly scoring job
+
 (Unit 3: Introduction to Map Reduce)
 
 Runs as a repeating batch job (every SCORE_INTERVAL_SECONDS):
@@ -61,8 +62,6 @@ Z_SCORE_THRESHOLD = 3.0
 BATCH_ERROR_RATE_THRESHOLD = 0.10
 MIN_WINDOW_REQUESTS = 20
 MIN_WINDOW_ERRORS = 3
-MIN_WINDOW_REQUESTS = 20
-MIN_WINDOW_ERRORS = 3
 
 # Logs are grouped into 10-second windows for error-spike detection.
 TIME_WINDOW_SECONDS = 10
@@ -92,7 +91,6 @@ def fetch_unscored_batch(spark):
             properties=JDBC_PROPS,
         )
     )
-
     return df
 
 
@@ -101,13 +99,14 @@ def get_time_window(timestamp):
     Convert a timestamp into the start of its 10-second window.
 
     Example:
-
         12:30:01 -> 12:30:00
         12:30:07 -> 12:30:00
         12:30:13 -> 12:30:10
     """
-
-    return int(timestamp.timestamp() // TIME_WINDOW_SECONDS) * TIME_WINDOW_SECONDS
+    return (
+        int(timestamp.timestamp() // TIME_WINDOW_SECONDS)
+        * TIME_WINDOW_SECONDS
+    )
 
 
 def map_phase_1(row):
@@ -118,11 +117,10 @@ def map_phase_1(row):
         (service, endpoint, time_window)
 
     Each row produces:
-
         key -> (count, sum_latency, sum_latency_squared, error_count)
     """
-
     timestamp = row["timestamp"]
+
     window_start = get_time_window(timestamp)
 
     key = (
@@ -160,7 +158,6 @@ def reduce_phase(a, b):
     Combine two partial aggregates for the same
     (service, endpoint, time_window) key.
     """
-
     return (
         a[0] + b[0],  # count
         a[1] + b[1],  # sum_latency
@@ -174,13 +171,11 @@ def stats_from_aggregate(agg):
     Convert the reduced aggregate into useful statistics.
 
     Returns:
-
         mean_latency
         stddev_latency
         error_rate
         request_count
     """
-
     count, sum_lat, sum_sq_lat, error_count = agg
 
     mean = (
@@ -222,8 +217,8 @@ def map_phase_2(row, stats_broadcast):
     2. It is an error AND the error rate in its 10-second
        window exceeds the configured error-rate threshold.
     """
-
     timestamp = row["timestamp"]
+
     window_start = get_time_window(timestamp)
 
     key = (
@@ -264,12 +259,12 @@ def map_phase_2(row, stats_broadcast):
     # not automatically marked anomalous.
     error_count = error_rate * count
 
-error_spike = (
-    count >= MIN_WINDOW_REQUESTS
-    and error_count >= MIN_WINDOW_ERRORS
-    and error_rate > BATCH_ERROR_RATE_THRESHOLD
-    and is_error
-)
+    error_spike = (
+        count >= MIN_WINDOW_REQUESTS
+        and error_count >= MIN_WINDOW_ERRORS
+        and error_rate > BATCH_ERROR_RATE_THRESHOLD
+        and is_error
+    )
 
     # Detect latency anomalies independently.
     latency_anomaly = (
@@ -290,7 +285,6 @@ error_spike = (
 
 def write_scores_back(scored_rows):
     """Batch UPDATE Postgres with computed anomaly scores."""
-
     if not scored_rows:
         return
 
@@ -298,7 +292,6 @@ def write_scores_back(scored_rows):
 
     try:
         with conn.cursor() as cur:
-
             cur.executemany(
                 """
                 UPDATE logs
@@ -307,11 +300,15 @@ def write_scores_back(scored_rows):
                 WHERE id = %s
                 """,
                 [
-                    (score, flag, row_id)
+                    (
+                        score,
+                        flag,
+                        row_id,
+                    )
                     for (
                         row_id,
                         score,
-                        flag
+                        flag,
                     ) in scored_rows
                 ],
             )
@@ -325,12 +322,10 @@ def write_scores_back(scored_rows):
         )
 
     except Exception as e:
-
         print(
             f"[scorer] write failed: {e}",
             flush=True,
         )
-
         conn.rollback()
 
     finally:
@@ -366,7 +361,6 @@ def run_batch(spark):
     # ---------------------------------------------------------
     # MAP PHASE 1 + REDUCE PHASE
     # ---------------------------------------------------------
-
     aggregated = (
         rdd
         .map(map_phase_1)
@@ -388,7 +382,6 @@ def run_batch(spark):
     # ---------------------------------------------------------
     # MAP PHASE 2
     # ---------------------------------------------------------
-
     scored = (
         rdd
         .map(
@@ -403,12 +396,10 @@ def run_batch(spark):
     # ---------------------------------------------------------
     # WRITE RESULTS
     # ---------------------------------------------------------
-
     write_scores_back(scored)
 
 
 def main():
-
     spark = get_spark()
 
     spark.sparkContext.setLogLevel("WARN")
@@ -420,12 +411,10 @@ def main():
     )
 
     while True:
-
         try:
             run_batch(spark)
 
         except Exception as e:
-
             print(
                 f"[scorer] batch error: {e}",
                 flush=True,
