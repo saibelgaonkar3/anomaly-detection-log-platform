@@ -1,6 +1,13 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:16
+    logging: *default-logging
     environment:
       POSTGRES_USER: loguser
       POSTGRES_PASSWORD: logpass
@@ -14,29 +21,34 @@ services:
   auth-service:
     build: ./services/auth-service
     container_name: auth-service
+    logging: *default-logging
     ports:
       - "8001:8000"
 
   orders-service:
     build: ./services/orders-service
     container_name: orders-service
+    logging: *default-logging
     ports:
       - "8002:8000"
 
   payments-service:
     build: ./services/payments-service
     container_name: payments-service
+    logging: *default-logging
     ports:
       - "8003:8000"
 
   inventory-service:
     build: ./services/inventory-service
     container_name: inventory-service
+    logging: *default-logging
     ports:
       - "8004:8000"
 
   traffic-generator:
     build: ./traffic-generator
+    logging: *default-logging
     depends_on:
       - auth-service
       - orders-service
@@ -47,6 +59,7 @@ services:
 
   log-shipper:
     build: ./log-shipper
+    logging: *default-logging
     depends_on:
       - postgres
       - auth-service
@@ -58,6 +71,7 @@ services:
 
   spark-scorer:
     build: ./spark-scorer
+    logging: *default-logging
     depends_on:
       - postgres
 
