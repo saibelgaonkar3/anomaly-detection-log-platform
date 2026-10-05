@@ -71,7 +71,8 @@ def get_spark():
     return (
         SparkSession.builder
         .appName("anomaly-mapreduce-scorer")
-        .master("local[*]")
+        .master("local[1]")
+        .config("spark.driver.memory", "512m")
         .config("spark.jars", "/app/postgresql-42.7.3.jar")
         .getOrCreate()
     )
