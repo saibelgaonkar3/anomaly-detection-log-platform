@@ -2,6 +2,7 @@ import time
 import random
 import json
 import requests
+import psycopg2
 from datetime import datetime, timezone
 
 SERVICES = {
@@ -12,6 +13,14 @@ SERVICES = {
 }
 
 GROUND_TRUTH_LOG = "/var/log/ground_truth.log"
+DB_CONFIG = {
+    "host": "postgres",
+    "port": 5432,
+    "dbname": "logs_db",
+    "user": "loguser",
+    "password": "logpass",
+    "connect_timeout": 5,
+}
 
 def log_anomaly(anomaly_type: str, detail: str):
     entry = {
@@ -21,6 +30,16 @@ def log_anomaly(anomaly_type: str, detail: str):
     }
     with open(GROUND_TRUTH_LOG, "a") as f:
         f.write(json.dumps(entry) + "\n")
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO ground_truth (timestamp, anomaly_type, detail) VALUES (%s, %s, %s)",
+                (entry["timestamp"], anomaly_type, detail),
+            )
+        conn.close()
+    except Exception as e:
+        print(f"[GROUND TRUTH] DB insert failed: {e}", flush=True)
     print(f"[GROUND TRUTH] {entry}", flush=True)
 
 def normal_traffic_tick():
