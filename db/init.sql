@@ -18,3 +18,7 @@ CREATE TABLE ground_truth (
     anomaly_type TEXT NOT NULL,
     detail TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_logs_ts ON logs (timestamp);
+CREATE INDEX IF NOT EXISTS idx_logs_anom ON logs (is_anomaly, timestamp);
+CREATE INDEX IF NOT EXISTS idx_gt_ts ON ground_truth (timestamp);
