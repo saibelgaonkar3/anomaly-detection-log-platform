@@ -1,0 +1,6 @@
+# Frontend dashboard dependencies (Python 3.10 - 3.13 recommended).
+# Install with:  pip install -r requirements.txt
+streamlit>=1.41
+plotly>=5.24
+pandas>=2.2
+psycopg[binary]>=3.2
