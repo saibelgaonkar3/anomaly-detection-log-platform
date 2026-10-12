@@ -1,3 +1,4 @@
+
 x-logging: &default-logging
   driver: json-file
   options:
@@ -5,6 +6,17 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
+  dashboard:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      DB_HOST: postgres
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    logging: *default-logging
+
   postgres:
     image: postgres:16
     logging: *default-logging

@@ -4,3 +4,5 @@ __pycache__/
 ground-truth/*.log
 .env
 .pem*.pem
+
+*.pem
